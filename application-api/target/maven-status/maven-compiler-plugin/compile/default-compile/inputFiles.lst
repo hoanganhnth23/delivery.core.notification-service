@@ -1,0 +1,11 @@
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/DeliveryPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/DurableSendPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/EventNotificationPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/InboxPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/OfferEventPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/PreferenceAccessPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/PreferencePort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/PushPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/SendCommand.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/StatusEventPort.java
+/Users/a/Documents/private/delivery/backend_delivery/notification/application-api/src/main/java/com/delivery/notification/application/api/StoredNotification.java
