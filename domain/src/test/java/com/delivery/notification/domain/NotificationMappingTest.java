@@ -91,9 +91,9 @@ class NotificationMappingTest {
         Locale previous = Locale.getDefault();
         try {
             Locale.setDefault(Locale.US);
-            var intent = NotificationMapping.shipperOffer(5L, 9L, "R", "P", "D", 1.25, "offer-1");
-            assertEquals(5L, intent.userId());
-            assertNull(intent.userPrincipalId());
+            var intent = NotificationMapping.shipperOffer(5L, 41L, 42L, 9L, "R", "P", "D", 1.25, "offer-1");
+            assertEquals(41L, intent.userId());
+            assertEquals(42L, intent.userPrincipalId());
             assertEquals("🎯 Đơn hàng phù hợp!", intent.title());
             assertEquals("Đơn hàng #9 từ R - cách điểm lấy khoảng 1.3km. Mở ứng dụng để xem offer hiện tại.", intent.message());
             assertEquals("MATCH_FOUND", intent.type());
@@ -105,18 +105,27 @@ class NotificationMappingTest {
             assertEquals(java.util.Map.of("pickupAddress", "P", "deliveryAddress", "D", "distance", 1.25,
                     "orderId", 9L, "recoveryEndpoint", "/api/deliveries/offers/current"), intent.data());
             assertThrows(UnsupportedOperationException.class, () -> intent.data().put("extra", "x"));
-            assertNotEquals(intent.deduplicationKey(), NotificationMapping.shipperOffer(6L, 9L, "R", "P", "D", 1.25, "offer-1").deduplicationKey());
-            assertNotEquals(intent.deduplicationKey(), NotificationMapping.shipperOffer(5L, 9L, "R", "P", "D", 1.25, "offer-2").deduplicationKey());
+            assertNotEquals(intent.deduplicationKey(), NotificationMapping.shipperOffer(6L, 41L, 42L, 9L, "R", "P", "D", 1.25, "offer-1").deduplicationKey());
+            assertNotEquals(intent.deduplicationKey(), NotificationMapping.shipperOffer(5L, 41L, 42L, 9L, "R", "P", "D", 1.25, "offer-2").deduplicationKey());
             Locale.setDefault(Locale.GERMANY);
-            assertTrue(NotificationMapping.shipperOffer(5L, 9L, "R", "P", "D", 1.25, "offer-1").message().contains("1,3km"));
+            assertTrue(NotificationMapping.shipperOffer(5L, 41L, 42L, 9L, "R", "P", "D", 1.25, "offer-1").message().contains("1,3km"));
         } finally {
             Locale.setDefault(previous);
         }
     }
 
     @Test
+    void offerIsAddressedToTheShipperAccountNeverToTheShipperProfileId() {
+        // Shipper profile 1 belongs to account 4; account 1 is someone else (e.g. a customer).
+        var intent = NotificationMapping.shipperOffer(1L, 4L, 4L, 9L, "R", "P", "D", 1.0, "offer-1");
+        assertEquals(4L, intent.userId());
+        assertEquals(4L, intent.userPrincipalId());
+        assertNotEquals(1L, intent.userId());
+    }
+
+    @Test
     void directOfferCallsRetainPermissiveContractUnlikeListenerValidation() {
-        var intent = NotificationMapping.shipperOffer(5L, 9L, null, null, null, null, null);
+        var intent = NotificationMapping.shipperOffer(5L, 41L, 42L, 9L, null, null, null, null, null);
         assertEquals("shipper-offer:null:5", intent.deduplicationKey());
         assertNull(intent.data().get("distance"));
         assertNull(intent.data().get("pickupAddress"));
@@ -146,8 +155,10 @@ class NotificationMappingTest {
             assertInvalid("orderId", () -> NotificationMapping.orderCreated(EVENT, 7L, null, invalid, "R"));
             assertInvalid("userId", () -> NotificationMapping.deliveryStatus(EVENT, invalid, null, 11L, "PENDING", null));
             assertInvalid("deliveryId", () -> NotificationMapping.deliveryStatus(EVENT, 7L, null, invalid, "PENDING", null));
-            assertInvalid("shipperId", () -> NotificationMapping.shipperOffer(invalid, 9L, "R", "P", "D", 1.0, "offer"));
-            assertInvalid("orderId", () -> NotificationMapping.shipperOffer(5L, invalid, "R", "P", "D", 1.0, "offer"));
+            assertInvalid("shipperId", () -> NotificationMapping.shipperOffer(invalid, 41L, 42L, 9L, "R", "P", "D", 1.0, "offer"));
+            assertInvalid("shipperUserId", () -> NotificationMapping.shipperOffer(5L, invalid, 42L, 9L, "R", "P", "D", 1.0, "offer"));
+            assertInvalid("shipperPrincipalId", () -> NotificationMapping.shipperOffer(5L, 41L, invalid, 9L, "R", "P", "D", 1.0, "offer"));
+            assertInvalid("orderId", () -> NotificationMapping.shipperOffer(5L, 41L, 42L, invalid, "R", "P", "D", 1.0, "offer"));
         }
     }
 

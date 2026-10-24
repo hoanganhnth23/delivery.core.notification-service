@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.kafka.support.JacksonUtils;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import com.delivery.notification_service.repository.NotificationRepository;
+import com.delivery.notification_service.entity.ShipperIdentityProjection;
+import com.delivery.notification_service.repository.ShipperIdentityProjectionRepository;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
@@ -100,6 +102,7 @@ class NotificationKafkaPostgresIntegrationTest {
     }
 
     @Autowired private NotificationRepository notificationRepository;
+    @Autowired private ShipperIdentityProjectionRepository shipperIdentityProjections;
     private final ObjectMapper wireMapper = JacksonUtils.enhancedObjectMapper();
     private DefaultKafkaProducerFactory<String, Object> relayProducerFactory;
     private KafkaTemplate<String, Object> relayKafka;
@@ -125,6 +128,7 @@ class NotificationKafkaPostgresIntegrationTest {
         closeReplicas();
         stopPrimaryListeners();
         notificationRepository.deleteAll();
+        shipperIdentityProjections.deleteAll();
         createRequiredTopics();
     }
 
@@ -169,6 +173,14 @@ class NotificationKafkaPostgresIntegrationTest {
     void shipperOfferKafkaPostgresReplayAndContradictoryReuseConvergeAcrossTwoNotificationReplicas()
             throws Exception {
         String eventId = UUID.randomUUID().toString();
+        // Shipper profile 8 belongs to account 80 (principal 81); the offer must land in that inbox.
+        ShipperIdentityProjection mapping = new ShipperIdentityProjection();
+        mapping.setPrincipalId(81L);
+        mapping.setLegacyUserId(80L);
+        mapping.setShipperId(8L);
+        mapping.setMappingVersion(1L);
+        mapping.setUpdatedAt(java.time.LocalDateTime.now());
+        shipperIdentityProjections.save(mapping);
         String payload = shipperOfferPayload(eventId, "Restaurant A");
 
         rehearseReplayAndContradiction(
@@ -205,7 +217,8 @@ class NotificationKafkaPostgresIntegrationTest {
         assertThat(notificationRepository.findAll()).singleElement().satisfies(notification -> {
             assertThat(notification.getDeduplicationKey()).isEqualTo("shipper-offer:" + eventId + ":8");
             assertThat(notification.getStatus()).isEqualTo("SENT");
-            assertThat(notification.getUserId()).isEqualTo(8L);
+            assertThat(notification.getUserId()).isEqualTo(80L);
+            assertThat(notification.getUserPrincipalId()).isEqualTo(81L);
             assertThat(notification.getRelatedEntityId()).isEqualTo(970_003L);
         });
     }

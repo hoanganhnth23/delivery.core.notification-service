@@ -52,12 +52,21 @@ public final class NotificationMapping {
         return request.build(null);
     }
 
-    public static NotificationIntent shipperOffer(Long shipperId, Long orderId, String restaurantName,
+    /**
+     * The inbox belongs to the shipper's account, not to the shipper profile id:
+     * the two id spaces overlap, so using shipperId as userId leaks the offer to
+     * whichever customer happens to own that number.
+     */
+    public static NotificationIntent shipperOffer(Long shipperId, Long shipperUserId, Long shipperPrincipalId,
+            Long orderId, String restaurantName,
             String pickupAddress, String deliveryAddress, Double distance, String offerEventId) {
         requirePositiveId(shipperId, "shipperId");
+        requirePositiveId(shipperUserId, "shipperUserId");
+        requirePositiveId(shipperPrincipalId, "shipperPrincipalId");
         requirePositiveId(orderId, "orderId");
         Draft request = new Draft();
-        request.userId = shipperId;
+        request.userId = shipperUserId;
+        request.userPrincipalId = shipperPrincipalId;
         request.title = "🎯 Đơn hàng phù hợp!";
         request.message = String.format(
                 "Đơn hàng #%d từ %s - cách điểm lấy khoảng %.1fkm. Mở ứng dụng để xem offer hiện tại.",

@@ -1,6 +1,7 @@
 package com.delivery.notification_service.listener;
 
 import com.delivery.notification_service.service.NotificationService;
+import com.delivery.notification_service.service.TestShipperRecipients;
 import com.delivery.order.contracts.OrderCreatedEvent;
 import com.delivery.delivery.contracts.ShipperFoundEvent;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -55,14 +56,14 @@ class NotificationListenerAcknowledgmentTest {
     void shipperOfferFailureIsNotAcknowledged() throws Exception {
         doThrow(new RuntimeException("database unavailable"))
                 .when(notificationService).sendShipperMatchFoundNotification(
-                        anyLong(), anyLong(), anyString(), anyString(), anyString(), anyDouble(), anyString());
+                        anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyString(), anyString(), anyDouble(), anyString());
 
         ShipperFoundEvent event = objectMapper.readValue("""
                 {"eventId":"11111111-1111-1111-1111-111111111111","deliveryId":8,"orderId":7,"restaurantName":"R","pickupAddress":"P",
                  "deliveryAddress":"D","availableShippers":[{"shipperId":5,"distanceKm":1.2}]}
                 """, ShipperFoundEvent.class);
 
-        assertThrows(IllegalStateException.class, () -> new MatchEventListener(notificationService)
+        assertThrows(IllegalStateException.class, () -> new MatchEventListener(notificationService, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(event, "delivery.shipper-offered", 0, 1L, acknowledgment));
 
         verify(acknowledgment, never()).acknowledge();
@@ -75,7 +76,7 @@ class NotificationListenerAcknowledgmentTest {
                  "deliveryAddress":"D","availableShippers":[{"shipperId":5,"distanceKm":1.2}]}
                 """, ShipperFoundEvent.class);
 
-        assertThrows(IllegalArgumentException.class, () -> new MatchEventListener(notificationService)
+        assertThrows(IllegalArgumentException.class, () -> new MatchEventListener(notificationService, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(event, "delivery.shipper-offered", 0, 1L, acknowledgment));
 
         verifyNoInteractions(notificationService);
@@ -89,7 +90,7 @@ class NotificationListenerAcknowledgmentTest {
                  "availableShippers":[{"shipperId":5,"distanceKm":1.2}]}
                 """, ShipperFoundEvent.class);
 
-        assertThrows(IllegalArgumentException.class, () -> new MatchEventListener(notificationService)
+        assertThrows(IllegalArgumentException.class, () -> new MatchEventListener(notificationService, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(event, "delivery.shipper-offered", 0, 1L, acknowledgment));
 
         verifyNoInteractions(notificationService);
@@ -103,7 +104,7 @@ class NotificationListenerAcknowledgmentTest {
                  "availableShippers":[{"shipperId":5,"distanceKm":1.2}]}
                 """, ShipperFoundEvent.class);
 
-        assertThrows(IllegalArgumentException.class, () -> new MatchEventListener(notificationService)
+        assertThrows(IllegalArgumentException.class, () -> new MatchEventListener(notificationService, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(event, "delivery.shipper-offered", 0, 1L, acknowledgment));
 
         verifyNoInteractions(notificationService);
