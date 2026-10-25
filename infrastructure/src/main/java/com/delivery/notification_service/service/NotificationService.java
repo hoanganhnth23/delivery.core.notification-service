@@ -42,8 +42,10 @@ public interface NotificationService {
     void sendDeliveryStatusNotification(UUID eventId, Long userId, Long deliveryId, String status, String shipperName);
     void sendDeliveryStatusNotification(UUID eventId, Long userId, Long userPrincipalId, Long deliveryId, String status, String shipperName);
     
-    // Shipper matching notifications (from Match Service)
-    void sendShipperMatchFoundNotification(Long shipperId, Long orderId, String restaurantName, 
+    // Shipper matching notifications (from Match Service). The recipient is the shipper's
+    // account (legacy user id + principal id), resolved from the shipper identity projection.
+    void sendShipperMatchFoundNotification(Long shipperId, Long shipperUserId, Long shipperPrincipalId,
+                                         Long orderId, String restaurantName,
                                          String pickupAddress, String deliveryAddress, 
                                          Double distance, String offerEventId);
 }

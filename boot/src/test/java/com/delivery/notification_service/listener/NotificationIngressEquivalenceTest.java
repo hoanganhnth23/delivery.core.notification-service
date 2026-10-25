@@ -2,6 +2,7 @@ package com.delivery.notification_service.listener;
 
 import com.delivery.delivery.contracts.ShipperFoundEvent;
 import com.delivery.notification_service.service.NotificationService;
+import com.delivery.notification_service.service.TestShipperRecipients;
 import com.delivery.notification_service.exception.NotificationConflictException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -26,23 +27,33 @@ class NotificationIngressEquivalenceTest {
                 + "\"pickupAddress\":\" P \",\"deliveryAddress\":\" D \",\"availableShippers\":"+selection+context+"}",ShipperFoundEvent.class);
     }
     @Test void validSimulationOfferStillAcknowledgesWithoutInboxOrPush() throws Exception {
-        new MatchEventListener(service).handleShipperFoundEvent(offer("[{\"shipperId\":5,\"distanceKm\":1.25}]",","+SIMULATION),
+        new MatchEventListener(service, TestShipperRecipients.shipperFive()).handleShipperFoundEvent(offer("[{\"shipperId\":5,\"distanceKm\":1.25}]",","+SIMULATION),
                 "delivery.shipper-offered",0,1L,ack);
         verifyNoInteractions(service); verify(ack).acknowledge();
     }
     @Test void realOfferReplayPreservesSelectedIdentityAndCanonicalWhitespace() throws Exception {
-        var event = offer("[{\"shipperId\":5,\"distanceKm\":1.25}]",""); var listener = new MatchEventListener(service);
+        var event = offer("[{\"shipperId\":5,\"distanceKm\":1.25}]",""); var listener = new MatchEventListener(service, TestShipperRecipients.shipperFive());
         listener.handleShipperFoundEvent(event,"delivery.shipper-offered",0,1L,ack);
         listener.handleShipperFoundEvent(event,"delivery.shipper-offered",0,2L,ack);
-        verify(service,times(2)).sendShipperMatchFoundNotification(5L,7L," R "," P "," D ",1.25,EVENT);
+        verify(service,times(2)).sendShipperMatchFoundNotification(5L,51L,52L,7L," R "," P "," D ",1.25,EVENT);
         verify(ack,times(2)).acknowledge();
     }
     @Test void nullSelectedElementRetainsRetryableWrapperRatherThanPoisonAndNeverAcknowledges() throws Exception {
         var event = offer("[null]","");
-        var failure = assertThrows(IllegalStateException.class,() -> new MatchEventListener(service)
+        var failure = assertThrows(IllegalStateException.class,() -> new MatchEventListener(service, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(event,"delivery.shipper-offered",0,1L,ack));
         assertEquals("Failed to process persisted shipper offer",failure.getMessage());
         assertInstanceOf(NullPointerException.class,failure.getCause()); verifyNoInteractions(service,ack);
+    }
+    @Test void offerForShipperWithoutIdentityMappingIsRetriedNeverSentToTheShipperIdAsUser() throws Exception {
+        // Shipper 6 has no projection yet: falling back to userId=6 would leak the offer to account 6.
+        var event = offer("[{\"shipperId\":6,\"distanceKm\":1.25}]","");
+        var failure = assertThrows(IllegalStateException.class,() -> new MatchEventListener(service, TestShipperRecipients.shipperFive())
+                .handleShipperFoundEvent(event,"delivery.shipper-offered",0,1L,ack));
+        assertEquals("Failed to process persisted shipper offer",failure.getMessage());
+        assertInstanceOf(com.delivery.notification_service.service.ShipperRecipientResolver.ShipperIdentityNotReadyException.class,
+                failure.getCause());
+        verifyNoInteractions(service,ack);
     }
     @Test void validSimulationStatusStillDispatchesUnlikeOfferAndBlankNameIsNull() {
         new DeliveryEventListener(service).handleDeliveryStatusUpdatedEvent(
@@ -55,12 +66,12 @@ class NotificationIngressEquivalenceTest {
     @Test void conflictRemainsPoisonAndInvalidSimulationDoesNotDispatch() throws Exception {
         var event = offer("[{\"shipperId\":5,\"distanceKm\":1.25}]","");
         var conflict = new NotificationConflictException("conflict");
-        doThrow(conflict).when(service).sendShipperMatchFoundNotification(anyLong(),anyLong(),anyString(),anyString(),anyString(),anyDouble(),anyString());
-        assertSame(conflict,assertThrows(NotificationConflictException.class,() -> new MatchEventListener(service)
+        doThrow(conflict).when(service).sendShipperMatchFoundNotification(anyLong(),anyLong(),anyLong(),anyLong(),anyString(),anyString(),anyString(),anyDouble(),anyString());
+        assertSame(conflict,assertThrows(NotificationConflictException.class,() -> new MatchEventListener(service, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(event,"delivery.shipper-offered",0,1L,ack)));
         verifyNoInteractions(ack); clearInvocations(service);
         var invalid = offer("[{\"shipperId\":5,\"distanceKm\":1.25}]",",\"simulationContext\":{\"mode\":\"SIMULATION\"}");
-        assertThrows(IllegalArgumentException.class,() -> new MatchEventListener(service)
+        assertThrows(IllegalArgumentException.class,() -> new MatchEventListener(service, TestShipperRecipients.shipperFive())
                 .handleShipperFoundEvent(invalid,"delivery.shipper-offered",0,1L,ack));
         verifyNoInteractions(service,ack);
     }

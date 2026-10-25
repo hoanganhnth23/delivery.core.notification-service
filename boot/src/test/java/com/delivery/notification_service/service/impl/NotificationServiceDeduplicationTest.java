@@ -42,8 +42,8 @@ class NotificationServiceDeduplicationTest {
                 mock(FirebaseService.class)));
         doReturn(null).when(service).sendNotification(any());
 
-        service.sendShipperMatchFoundNotification(5L, 7L, "R", "P", "D", 1.2, "offer-event-1");
-        service.sendShipperMatchFoundNotification(5L, 7L, "R", "P", "D", 1.2, "offer-event-2");
+        service.sendShipperMatchFoundNotification(5L, 51L, 52L, 7L, "R", "P", "D", 1.2, "offer-event-1");
+        service.sendShipperMatchFoundNotification(5L, 51L, 52L, 7L, "R", "P", "D", 1.2, "offer-event-2");
 
         ArgumentCaptor<SendNotificationRequest> requests = ArgumentCaptor.forClass(SendNotificationRequest.class);
         verify(service, times(2)).sendNotification(requests.capture());
