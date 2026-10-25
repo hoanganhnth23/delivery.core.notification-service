@@ -18,8 +18,8 @@ public final class EventNotifications {
         port.send(NotificationMapping.deliveryStatus(eventId, userId, principalId, deliveryId, status, shipperName));
     }
 
-    public void shipperOffer(Long shipperId, Long orderId, String restaurant, String pickup,
-            String delivery, Double distance, String eventId) {
-        port.send(NotificationMapping.shipperOffer(shipperId, orderId, restaurant, pickup, delivery, distance, eventId));
+    public void shipperOffer(Long shipperId, Long shipperUserId, Long shipperPrincipalId, Long orderId,
+            String restaurant, String pickup, String delivery, Double distance, String eventId) {
+        port.send(NotificationMapping.shipperOffer(shipperId, shipperUserId, shipperPrincipalId, orderId, restaurant, pickup, delivery, distance, eventId));
     }
 }

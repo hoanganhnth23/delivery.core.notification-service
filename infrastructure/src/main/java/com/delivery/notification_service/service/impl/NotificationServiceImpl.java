@@ -272,10 +272,10 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendShipperMatchFoundNotification(Long shipperId, Long orderId, String restaurantName,
-            String pickupAddress, String deliveryAddress,
+    public void sendShipperMatchFoundNotification(Long shipperId, Long shipperUserId, Long shipperPrincipalId,
+            Long orderId, String restaurantName, String pickupAddress, String deliveryAddress,
             Double distance, String offerEventId) {
-        events().shipperOffer(shipperId, orderId, restaurantName,
+        events().shipperOffer(shipperId, shipperUserId, shipperPrincipalId, orderId, restaurantName,
                 pickupAddress, deliveryAddress, distance, offerEventId);
         log.info("🎯 Sent match found notification to shipper {}", shipperId);
     }

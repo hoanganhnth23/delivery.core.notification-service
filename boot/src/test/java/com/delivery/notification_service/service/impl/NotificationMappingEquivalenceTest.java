@@ -67,9 +67,9 @@ class NotificationMappingEquivalenceTest {
     @ValueSource(strings = {"P"})
     void offerRequestPreservesExactGsonBytesIncludingNullOmission(String pickup) {
         var service = mappingService();
-        service.sendShipperMatchFoundNotification(5L, 9L, "R", pickup, "D<>&", 1.25, "offer-1");
+        service.sendShipperMatchFoundNotification(5L, 51L, 52L, 9L, "R", pickup, "D<>&", 1.25, "offer-1");
         var request = captured(service);
-        assertCommon(request, 5L, null, "🎯 Đơn hàng phù hợp!",
+        assertCommon(request, 51L, 52L, "🎯 Đơn hàng phù hợp!",
                 String.format("Đơn hàng #%d từ %s - cách điểm lấy khoảng %.1fkm. Mở ứng dụng để xem offer hiện tại.",
                         9L, "R", 1.25), "MATCH_FOUND", "HIGH", 9L, "ORDER", "shipper-offer:offer-1:5");
         // Original insertion and serialization, independent of the new domain intent.

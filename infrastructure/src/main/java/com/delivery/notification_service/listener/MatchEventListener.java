@@ -2,6 +2,7 @@ package com.delivery.notification_service.listener;
 
 import com.delivery.notification_service.exception.NotificationConflictException;
 import com.delivery.notification_service.service.NotificationService;
+import com.delivery.notification_service.service.ShipperRecipientResolver;
 import com.delivery.notification.domain.EventIdentity;
 import com.delivery.notification.application.IncomingOffer;
 import com.delivery.notification.application.api.OfferEventPort;
@@ -24,9 +25,11 @@ import org.springframework.stereotype.Component;
 public class MatchEventListener {
 
     private final NotificationService notificationService;
+    private final ShipperRecipientResolver recipients;
 
-    public MatchEventListener(NotificationService notificationService) {
+    public MatchEventListener(NotificationService notificationService, ShipperRecipientResolver recipients) {
         this.notificationService = notificationService;
+        this.recipients = recipients;
     }
 
     /**
@@ -70,7 +73,9 @@ public class MatchEventListener {
                 public void send(EventIdentity.Offer incoming, EventIdentity.SelectedShipper selected) {
                     log.info("📥 Received persisted shipper offer from topic '{}': deliveryId={}, orderId={}",
                             topic, incoming.deliveryId(), incoming.orderId());
-                    notificationService.sendShipperMatchFoundNotification(selected.shipperId(), incoming.orderId(),
+                    ShipperRecipientResolver.Recipient recipient = recipients.require(selected.shipperId());
+                    notificationService.sendShipperMatchFoundNotification(selected.shipperId(),
+                            recipient.legacyUserId(), recipient.principalId(), incoming.orderId(),
                             incoming.restaurantName(), incoming.pickupAddress(), incoming.deliveryAddress(),
                             selected.distanceKm(), incoming.eventId().toString());
                     log.info("✅ Sent notification to shipper: {} for order: {} (distance: {}km)",
